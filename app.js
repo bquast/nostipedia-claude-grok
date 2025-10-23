@@ -75,7 +75,7 @@ const app = {
         this.articles[query] = [];
 
         try {
-            const response = await fetch(`/functions/api/article/${encodeURIComponent(query)}`);
+            const response = await fetch(`/api/article/${encodeURIComponent(query)}`);
             if (!response.ok) throw new Error('Failed to fetch article');
             const data = await response.json();
             data.events.forEach(event => this.processArticle(event));
@@ -228,13 +228,25 @@ const app = {
         // Nostr links (npub, nsec, etc.)
         html = html.replace(/(npub1[a-z0-9]{59}|nsec1[a-z0-9]{59}|note1[a-z0-9]{59})/g, '<a href="https://nostr.band/$1" target="_blank">$1</a>');
 
-        // Unordered lists
+        // Images !Image[url]
+        html = html.replace(/!Image\[(.*?)\]/g, '<img src="$1" alt="Image" style="max-width: 100%; height: auto;">');
+
+        // Unordered lists (line starts with *)
         html = html.replace(/^\* (.*)$/gm, '<ul><li>$1</li></ul>');
         html = html.replace(/<\/ul><ul>/g, ''); // Merge lists
 
         // Ordered lists
         html = html.replace(/^\. (.*)$/gm, '<ol><li>$1</li></ol>');
         html = html.replace(/<\/ol><ol>/g, ''); // Merge lists
+
+        // Inline lists after "See also:" (specific to this content pattern)
+        html = html.replace(/See also: (.*)/g, (match, listStr) => {
+            const items = listStr.split(' * ').map(item => item.trim()).filter(item => item);
+            if (items.length > 1) {
+                return 'See also:<ul>' + items.map(item => '<li>' + item + '</li>').join('') + '</ul>';
+            }
+            return match;
+        });
 
         // Paragraphs: split by double newlines
         html = html.split(/\n{2,}/).map(p => `<p>${p}</p>`).join('');
@@ -357,7 +369,7 @@ const app = {
         this.currentSearch = null;
 
         try {
-            const response = await fetch('/functions/api/popular');
+            const response = await fetch('/api/popular');
             if (!response.ok) throw new Error('Failed to fetch popular');
             const data = await response.json();
             const list = document.getElementById('popularList');
