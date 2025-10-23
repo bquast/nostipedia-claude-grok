@@ -2,6 +2,6 @@
 export default {
   async scheduled(event, env, ctx) {
     // Trigger popular refresh
-    await fetch('https://your-domain.pages.dev/functions/api/popular', { method: 'GET' });
+    await fetch('https://nostipedia-claude-grok.pages.dev/api/popular', { method: 'GET' });
   },
 };
